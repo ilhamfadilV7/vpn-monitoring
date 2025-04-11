@@ -3,7 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\AuthController;
+
 use Illuminate\Support\Facades\Session;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -23,24 +27,67 @@ use Illuminate\Support\Facades\Session;
 
 // Route::get('{any}', [App\Http\Controllers\HomeController::class, 'index'])->name('index');
 
+// Route::get('/', function () {
+//     // return auth()->check() ? redirect('/ovpn') : redirect('/login');
+//     if (Session::has('user_data')) {
+//         return redirect()->route('ovpn'); // atau route dashboard kamu
+//     }
+//     return redirect()->route('login');
+// });
+
 Route::get('/', function () {
-    // return auth()->check() ? redirect('/ovpn') : redirect('/login');
-    if (Session::has('user_data')) {
-        return redirect()->route('ovpn'); // atau route dashboard kamu
+    if (Session::has('user')) {
+        $role = Session::get('role');
+
+        if ($role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        } elseif ($role === 'monitoring') {
+            return redirect()->route('monitoring.dashboard');
+        }
+
+        // Jika role tidak dikenali
+        Session::flush();
+        return redirect()->route('login')->withErrors(['email' => 'Role tidak dikenali.']);
     }
+
     return redirect()->route('login');
 });
 
-Route::get('/login', [Controller::class, 'loginpage'])->name('login');
-Route::post('/login', [Controller::class, 'login']);
-Route::post('/logout', [Controller::class, 'logout'])->name('logout');
 
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-
-Route::middleware(['sessionauth'])->group(function () {
-    Route::get('/pptp', [Controller::class, 'dashpptp'])->name('pptp');
-    Route::get('/ovpn', [Controller::class, 'ovpn'])->name('ovpn');
+// Route::middleware('role:admin')->group(function () {
+//     Route::get('/admin/dashboard', function () {
+//         return view('layouts.dashboard-admin');
+//     })->name('admin.dashboard');
+//     Route::get('/admin/vpn-users', [Controller::class, 'vpnUsers'])->name('admin.vpn-users');
+// });
+Route::middleware('role:admin')->group(function () {
+    Route::get('/admin/dashboard', [Controller::class, 'vpnUsers'])->name('admin.dashboard');
 });
+
+
+
+
+Route::middleware(['monitoring'])->prefix('monitoring')->group(function () {
+    Route::get('/ovpn', [Controller::class, 'ovpn'])->name('monitoring.ovpn');
+    Route::get('/pptp', [Controller::class, 'dashpptp'])->name('monitoring.pptp');
+    Route::get('/dashboard', function () {
+        return redirect()->route('monitoring.ovpn'); // Atau halaman utama monitoring
+    })->name('monitoring.dashboard');
+});
+
+Route::post('/vpn-account/store', [Controller::class, 'addVpnUser'])->name('vpn.store');
+
+
+
+
+// Route::middleware(['sessionauth'])->group(function () {
+//     Route::get('/pptp', [Controller::class, 'dashpptp'])->name('pptp');
+//     Route::get('/ovpn', [Controller::class, 'ovpn'])->name('ovpn');
+// });
 
 
 Route::get('/keep-alive', function () {

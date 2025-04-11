@@ -23,7 +23,7 @@
 
 <div class="row align-items-center g-3 mb-4">
     <div class="col-sm-3 me-auto">
-        <h5 class="card-title mb-0">Connected : <span class="badge bg-success ms-1 align-baseline">1</span></h5>
+        <h5 class="card-title mb-0">Connected : <span class="badge bg-success ms-1 align-baseline"> {{ $pptp_count }}</span></h5>
     </div><!--end col-->
     <div class="col-lg-3 col-sm-5 col">
         <div class="search-box">

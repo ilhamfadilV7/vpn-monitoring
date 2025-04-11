@@ -106,15 +106,15 @@
                                 $user = session('user_data')['user'] ?? 'Guest';
                                 @endphp
 
-                                <span class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{{ $user }}
+                                <span class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{{ session('user')->name ?? 'Guest' }}
                                 </span>
-                                <span class="d-none d-xl-block ms-1 fs-sm user-name-sub-text">Admin</span>
+                                <span class="d-none d-xl-block ms-1 fs-sm user-name-sub-text">{{ session('user')->role ?? 'Guest' }}</span>
                             </span>
                         </span>
                     </button>
                     <div class="dropdown-menu dropdown-menu-end">
                         <!-- item-->
-                        <h6 class="dropdown-header">Welcome {{$user}} !</h6>
+                        <h6 class="dropdown-header">Welcome {{ session('user')->name ?? 'Guest' }} !</h6>
                         <a class="dropdown-item" href="javascript:void(0)"><i
                                 class="mdi mdi-account-circle text-muted fs-lg align-middle me-1"></i> <span
                                 class="align-middle"> @lang('translation.profile')</span></a>

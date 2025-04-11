@@ -31,6 +31,33 @@
                 <ul class="navbar-nav" id="navbar-nav">
 
                     <li class="menu-title"><span>@lang('translation.menu')</span></li>
+
+                    @if(Session::get('role') === 'admin')
+                    <!-- Hanya untuk admin -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('admin.dashboard') }}">
+                            <i class="ph-gauge"></i> <span>Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="">
+                            <i class="ph-gear-six"></i> <span>Manajemen User</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarDashboards">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="" class="nav-link">Tambah User</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="#vpnAccountModal" class="nav-link" data-bs-toggle="modal">Tambah Akun VPN</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    @elseif(Session::get('role') === 'monitoring')
+                    <!-- Tampilan sidebar seperti biasa untuk monitoring -->
                     <li class="nav-item">
                         <a class="nav-link menu-link collapsed" href="#sidebarDashboards" data-bs-toggle="collapse"
                             role="button" aria-expanded="false" aria-controls="sidebarDashboards">
@@ -39,14 +66,36 @@
                         <div class="collapse menu-dropdown" id="sidebarDashboards">
                             <ul class="nav nav-sm flex-column">
                                 <li class="nav-item">
-                                    <a href="{{ route('ovpn')}}" class="nav-link" data-key="t-starters"> OVPN</a>
+                                    <a href="{{ route('monitoring.ovpn')}}" class="nav-link">OVPN</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href=" {{ route('pptp')}} " class="nav-link" data-key="t-starters"> PPTP</a>
+                                    <a href="{{ route('monitoring.pptp')}}" class="nav-link">PPTP</a>
                                 </li>
                             </ul>
                         </div>
                     </li>
+                    @endif
+
+
+
+
+
+                    <!-- <li class="nav-item">
+                        <a class="nav-link menu-link collapsed" href="#sidebarDashboards" data-bs-toggle="collapse"
+                            role="button" aria-expanded="false" aria-controls="sidebarDashboards">
+                            <i class="ph-gauge"></i> <span>@lang('translation.dashboards')</span>
+                        </a>
+                        <div class="collapse menu-dropdown" id="sidebarDashboards">
+                            <ul class="nav nav-sm flex-column">
+                                <li class="nav-item">
+                                    <a href="{{ route('monitoring.ovpn')}}" class="nav-link" data-key="t-starters"> OVPN</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href=" {{ route('monitoring.pptp')}} " class="nav-link" data-key="t-starters"> PPTP</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li> -->
 
                     <!-- <li class="nav-item">
                         <a class="nav-link menu-link collapsed" href="#sidebarLayouts" data-bs-toggle="collapse"
@@ -157,7 +206,7 @@
                         </div>
                     </li> -->
 
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a class="nav-link menu-link collapsed" href="#sidebarPages" data-bs-toggle="collapse"
                             role="button" aria-expanded="false" aria-controls="sidebarPages">
                             <i class="ph-address-book"></i> <span data-key="t-pages">User</span>
@@ -167,8 +216,8 @@
                                 <li class="nav-item">
                                     <a href="" class="nav-link" data-key="t-starter">List User
                                     </a>
-                                </li>
-                                <!-- <li class="nav-item">
+                                </li> -->
+                    <!-- <li class="nav-item">
                                     <a href="pages-maintenance" class="nav-link"
                                         data-key="t-maintenance">@lang('translation.maintenance') </a>
                                 </li>
@@ -176,9 +225,9 @@
                                     <a href="pages-coming-soon" class="nav-link"
                                         data-key="t-coming-soon">@lang('translation.coming-soon') </a>
                                 </li> -->
-                            </ul>
+                    <!-- </ul>
                         </div>
-                    </li>
+                    </li> -->
 
                     <!-- <li class="nav-item">
                         <a class="nav-link menu-link" href="#sidebarMultilevel" data-bs-toggle="collapse"
@@ -233,3 +282,131 @@
     <!-- Left Sidebar End -->
     <!-- Vertical Overlay-->
     <div class="vertical-overlay"></div>
+
+
+
+
+
+    <!-- Modal Tambah Akun VPN -->
+    <div class="modal fade" id="vpnAccountModal" tabindex="-1" aria-labelledby="vpnAccountModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form action="{{ route('vpn.store') }}" method="POST" class="modal-content">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vpnAccountModalLabel">Tambah Akun VPN</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+
+                    <!-- Toggle Mode -->
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input" type="checkbox" id="modeToggle" onchange="toggleMode()">
+                        <label class="form-check-label" for="modeToggle" id="modeLabel">Mode Manual</label>
+                    </div>
+
+                    <!-- Manual Mode Section -->
+                    <div id="manualInputs">
+                        <!-- Baris 1: Username & Password -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="vpn-username" class="form-label">Username</label>
+                                <input type="text" name="username" id="username" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="vpn-password" class="form-label">Password</label>
+                                <input type="text" name="password" id="password" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <!-- Baris 2: Profile -->
+                        <div class="mb-3">
+                            <label for="vpn-profile" class="form-label">Profile</label>
+                            <select name="profile" id="vpn-profile" class="form-select" required>
+                                <option value="default">default</option>
+                                <option value="default-encryption">default-encryption</option>
+                            </select>
+                        </div>
+
+                        <!-- Baris 3: Local & Remote Address -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="local-address" class="form-label">Local Address</label>
+                                <input type="text" name="local_address" id="local-address" class="form-control" placeholder="Contoh: 10.0.0.1">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="remote-address" class="form-label">Remote Address</label>
+                                <input type="text" name="remote_address" id="remote-address" class="form-control" placeholder="Contoh: 10.0.0.100">
+                            </div>
+                        </div>
+
+                        <!-- Baris 4: Limit Bandwidth -->
+                        <div class="mb-3">
+                            <label for="bandwidth-limit" class="form-label">Limit Bandwidth</label>
+                            <select name="bandwidth_limit" id="bandwidth-limit" class="form-select" required>
+                                <option value="" disabled selected>Pilih Limit Bandwidth</option>
+                                <option value="64k/64k">64 Kbps</option>
+                                <option value="128k/128k">128 Kbps</option>
+                                <option value="256k/256k">256 Kbps</option>
+                            </select>
+                        </div>
+
+                        <!-- Baris 4: Service -->
+                        <div class="mb-3">
+                            <label for="vpn-service" class="form-label">Tipe VPN</label>
+                            <select name="service" id="vpn-service" class="form-select" required>
+                                @foreach ($services as $service)
+                                <option value="{{ $service }}">{{ strtoupper($service) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Automatic Mode Section (initially hidden) -->
+                    <div id="autoInputs" style="display: none;">
+                        <div class="alert alert-info">Mode Otomatis: Data akun akan dibuat otomatis berdasarkan konfigurasi default.</div>
+                        <!-- Anda bisa tambahkan input tersembunyi jika dibutuhkan -->
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Tambah Akun</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleMode() {
+            const isAuto = document.getElementById('modeToggle').checked;
+            document.getElementById('manualInputs').style.display = isAuto ? 'none' : 'block';
+            document.getElementById('autoInputs').style.display = isAuto ? 'block' : 'none';
+            document.getElementById('modeLabel').innerText = isAuto ? 'Mode Otomatis' : 'Mode Manual';
+        }
+    </script>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const switchInput = document.getElementById('inputModeSwitch');
+            const manualSection = document.getElementById('manualInput');
+            const autoSection = document.getElementById('autoInput');
+            const modeLabel = document.getElementById('modeLabel');
+
+            function updateView() {
+                if (switchInput.checked) {
+                    manualSection.style.display = 'block';
+                    autoSection.style.display = 'none';
+                    modeLabel.textContent = 'Mode Manual';
+                } else {
+                    manualSection.style.display = 'none';
+                    autoSection.style.display = 'block';
+                    modeLabel.textContent = 'Mode Otomatis';
+                }
+            }
+
+            switchInput.addEventListener('change', updateView);
+
+            // Jalankan sekali saat halaman dimuat
+            updateView();
+        });
+    </script>

@@ -12,6 +12,8 @@
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet">
     @include('layouts.head-css')
+
+
 </head>
 
 <body>
@@ -52,6 +54,9 @@
             fetch('/keep-alive');
         }, 10 * 60 * 1000);
     </script>
+
+
+
 </body>
 
 </html>

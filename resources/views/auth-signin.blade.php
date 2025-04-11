@@ -88,6 +88,13 @@
                                         <form action="/login" method="POST">
                                             @csrf
 
+                                            {{-- Tampilkan error jika ada --}}
+                                            @if ($errors->any())
+                                            <div class="alert alert-danger">
+                                                {{ $errors->first() }}
+                                            </div>
+                                            @endif
+
                                             <div class="mb-3">
                                                 <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
                                                 <div class="position-relative ">
@@ -115,7 +122,7 @@
                                                 <button class="btn btn-primary w-100" type="submit">Sign In</button>
                                             </div>
 
-                                            <div class="mt-4 pt-2 text-center">
+                                            <!-- <div class="mt-4 pt-2 text-center">
                                                 <div class="signin-other-title position-relative">
                                                     <h5 class="fs-sm mb-4 title">Sign In with</h5>
                                                 </div>
@@ -125,12 +132,12 @@
                                                     <button type="button" class="btn btn-subtle-dark btn-icon"><i class="ri-github-fill fs-lg"></i></button>
                                                     <button type="button" class="btn btn-subtle-info btn-icon"><i class="ri-twitter-fill fs-lg"></i></button>
                                                 </div>
-                                            </div>
+                                            </div> -->
                                         </form>
 
-                                        <div class="text-center mt-5">
+                                        <!-- <div class="text-center mt-5">
                                             <p class="mb-0">Don't have an account ? <a href="auth-signup" class="fw-semibold text-secondary text-decoration-underline"> SignUp</a> </p>
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div><!-- end card body -->
                             </div><!-- end card -->

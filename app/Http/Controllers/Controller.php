@@ -9,11 +9,20 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use App\Services\MikrotikService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+
 
 
 class Controller extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
+
+    protected $mikrotik;
+
+    public function __construct(MikrotikService $mikrotik)
+    {
+        $this->mikrotik = $mikrotik;
+    }
 
 
     public function loginpage()
@@ -117,12 +126,11 @@ class Controller extends BaseController
     {
         $data = $mikrotik->getActiveOvpnConnections();
 
-
-
         // Filter hanya OVPN
         $filtered = collect($data)->where('service', 'pptp')->values();
 
-        // dd($filtered);
+        // Hitung jumlah koneksi PPTP aktif
+        $pptpCount = $filtered->count();
 
         $filtered = $filtered->map(function ($item) {
             $item['uptime_formatted'] = $this->formatUptime($item['uptime']);
@@ -131,7 +139,58 @@ class Controller extends BaseController
 
 
         return view('layouts.pptp', [
-            'active_pptp' => $filtered
+            'active_pptp' => $filtered,
+            'pptp_count' => $pptpCount
         ]);
+    }
+
+    public function addVpnUser(Request $request, MikrotikService $mikrotikService)
+    {
+
+        $request->validate([
+            'username' => 'required',
+            'password' => 'required',
+            'profile'  => 'required',
+            'service'  => 'required',
+            'local_address' => 'nullable|ip',
+            'remote_address' => 'nullable|ip',
+            'bandwidth_limit' => 'required',
+        ]);
+
+        Log::info('Request masuk:', $request->all());
+
+        try {
+            $result = $mikrotikService->addVpnUser(
+                $request->username,
+                $request->password,
+                $request->profile,
+                $request->service,
+                $request->local_address,
+                $request->remote_address,
+                $request->bandwidth_limit
+            );
+
+            if (isset($result['error'])) {
+                return redirect()->back()->with('error', $result['error']);
+            }
+
+            return redirect()->back()->with('success', 'Akun VPN berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function showVpnForm(MikrotikService $mikrotikService)
+    {
+        $services = $mikrotikService->getPppServices();
+        return view('vpn.form', compact('services'));
+    }
+
+    public function vpnUsers(MikrotikService $mikrotikService)
+    {
+        $vpnUsers = $mikrotikService->getAllVpnUsers(); // fungsi ambil semua user ppp secret
+
+
+        return view('layouts.dashboard-admin', compact('vpnUsers'));
     }
 }
