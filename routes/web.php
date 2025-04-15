@@ -66,6 +66,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // });
 Route::middleware('role:admin')->group(function () {
     Route::get('/admin/dashboard', [Controller::class, 'vpnUsers'])->name('admin.dashboard');
+    Route::get('/admin/akun', [Controller::class, 'getAll'])->name('admin.akun');
+    Route::post('/users', [Controller::class, 'createAkun'])->name('users.store');
+    Route::delete('/user/{id}', [Controller::class, 'destroy'])->name('user.destroy');
+    Route::put('/admin/akun/{id}', [Controller::class, 'update'])->name('admin.akun.update');
 });
 
 
@@ -73,13 +77,20 @@ Route::middleware('role:admin')->group(function () {
 
 Route::middleware(['monitoring'])->prefix('monitoring')->group(function () {
     Route::get('/ovpn', [Controller::class, 'ovpn'])->name('monitoring.ovpn');
-    Route::get('/pptp', [Controller::class, 'dashpptp'])->name('monitoring.pptp');
+    // Route::get('/pptp', [Controller::class, 'dashpptp'])->name('monitoring.pptp');
     Route::get('/dashboard', function () {
         return redirect()->route('monitoring.ovpn'); // Atau halaman utama monitoring
     })->name('monitoring.dashboard');
+    Route::get('/vpn/stats', [Controller::class, 'getLiveStats'])->name('vpn.stats');
+    Route::get('/vpn/stats/{username}', [Controller::class, 'getLiveUserStats']);
+    Route::get('/api/vpn-traffic', [Controller::class, 'getUserTraffic']);
+    Route::get('/monitoring/search-vpn', [Controller::class, 'searchVpn'])->name('vpn.search');
 });
 
-Route::post('/vpn-account/store', [Controller::class, 'addVpnUser'])->name('vpn.store');
+// Route::post('/vpn-account/store', [Controller::class, 'addVpnUser'])->name('vpn.store');
+// Route::post('/vpn/auto-generate', [Controller::class, 'autoGenerateVpn'])->name('vpn.autoGenerate');
+Route::post('/vpn/store', [Controller::class, 'store'])->name('vpn.store');
+
 
 
 

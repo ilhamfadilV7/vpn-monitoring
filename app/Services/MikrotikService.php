@@ -33,6 +33,52 @@ class MikrotikService
         }
     }
 
+    public function getAllVpnAccountsWithStatus()
+    {
+        $host = env('MIKROTIK_HOST');
+        $user = env('MIKROTIK_USER');
+        $pass = env('MIKROTIK_PASS');
+
+        if ($this->API->connect($host, $user, $pass)) {
+            // Get all registered VPN accounts
+            $this->API->write('/ppp/secret/print');
+            $secrets = $this->API->parseResponse($this->API->read(false));
+
+            // Get active connections
+            $this->API->write('/ppp/active/print');
+            $actives = $this->API->parseResponse($this->API->read(false));
+
+            $this->API->disconnect();
+
+            $activesByName = collect($actives)->keyBy('name');
+
+            $accounts = collect($secrets)->map(function ($user) use ($activesByName) {
+                $active = $activesByName[$user['name']] ?? null;
+
+                return [
+                    'name'     => $user['name'] ?? '',
+                    'service'  => $user['service'] ?? '',
+                    'profile'  => $user['profile'] ?? '',
+                    'disabled' => $user['disabled'] ?? 'false',
+                    'status'   => $active ? 'Connected' : 'Disconnected',
+                    'uptime'   => $active['uptime'] ?? null,
+                    'address'  => $active['address'] ?? null,
+                ];
+            });
+
+            return $accounts;
+        }
+
+        return collect([
+            ['error' => 'Gagal konek ke MikroTik.']
+        ]);
+    }
+
+
+
+
+
+
 
     public function addVpnUser($username, $password, $profile = 'default-encryption', $service = 'any', $localAddress = null, $remoteAddress = null, $rateLimit = null)
     {
@@ -94,6 +140,8 @@ class MikrotikService
         } else {
             Log::error("Gagal konek ke MikroTik");
             return ['error' => 'Gagal konek ke MikroTik.'];
+            Log::error("Cek koneksi atau kredensial: ", compact('host', 'user'));
+            return ['error' => 'Gagal konek ke MikroTik.'];
         }
     }
 
@@ -125,5 +173,145 @@ class MikrotikService
         }
 
         return [];
+    }
+
+    public function getActiveVpnUsers()
+    {
+        $host = env('MIKROTIK_HOST');
+        $user = env('MIKROTIK_USER');
+        $pass = env('MIKROTIK_PASS');
+
+        if ($this->API->connect($host, $user, $pass)) {
+            $activeUsers = $this->API->comm('/ppp/active/print');
+            $this->API->disconnect();
+
+            return collect($activeUsers)->pluck('name')->toArray(); // hanya ambil username
+        }
+
+        return [];
+    }
+
+
+    public function getQueueList()
+    {
+        $host = env('MIKROTIK_HOST');
+        $user = env('MIKROTIK_USER');
+        $pass = env('MIKROTIK_PASS');
+
+        if ($this->API->connect($host, $user, $pass)) {
+            $queues = $this->API->comm('/queue/simple/print');
+            $this->API->disconnect();
+            return $queues;
+        }
+
+        return [];
+    }
+
+    public function getAvailableIpPool()
+    {
+        $host = env('MIKROTIK_HOST');
+        $user = env('MIKROTIK_USER');
+        $pass = env('MIKROTIK_PASS');
+
+        if ($this->API->connect($host, $user, $pass)) {
+            $pool = $this->API->comm('/ip/pool/print');
+            $this->API->disconnect();
+
+            // Kalau Mikrotik nggak balikin pool apa-apa, fallback ke hardcoded
+            if (empty($pool)) {
+                Log::warning("IP Pool kosong dari Mikrotik, fallback ke hardcoded.");
+                return [[
+                    'name' => 'hardcoded-pool',
+                    'ranges' => '10.60.60.2-10.60.60.255'
+                ]];
+            }
+
+            Log::info("Isi IP Pool dari Mikrotik:", $pool);
+            return $pool;
+        }
+
+        Log::error("Gagal konek untuk ambil IP pool");
+        return [[
+            'name' => 'hardcoded-fallback',
+            'ranges' => '10.60.60.2-10.60.60.255'
+        ]];
+    }
+
+
+    public function getNextAvailableIp($poolList)
+    {
+        if (empty($poolList)) return null;
+
+        $usedIps = collect($this->getAllVpnUsers())
+            ->pluck('remote-address')
+            ->filter()
+            ->toArray();
+
+        foreach ($poolList as $pool) {
+            if (!isset($pool['ranges'])) continue;
+
+            $ranges = explode(',', $pool['ranges']);
+
+            foreach ($ranges as $range) {
+                $range = trim($range);
+
+                if (str_contains($range, '-')) {
+                    [$startIp, $endIp] = explode('-', $range);
+                } else {
+                    // Jika hanya satu IP (misalnya "10.10.10.5")
+                    $startIp = $endIp = $range;
+                }
+
+                $start = ip2long($startIp);
+                $end = ip2long($endIp);
+
+                for ($ip = $start; $ip <= $end; $ip++) {
+                    $candidate = long2ip($ip);
+                    if (!in_array($candidate, $usedIps)) {
+                        return $candidate;
+                    }
+                }
+            }
+        }
+
+        return null; // Semua IP sudah dipakai
+    }
+
+    public function getTrafficForUser($username)
+    {
+        $host = env('MIKROTIK_HOST');
+        $user = env('MIKROTIK_USER');
+        $pass = env('MIKROTIK_PASS');
+
+        if (!$this->API->connect($host, $user, $pass)) {
+            Log::error("Gagal koneksi ke MikroTik untuk traffic user: $username");
+            return [
+                'username' => $username,
+                'bytes_in' => 0,
+                'bytes_out' => 0,
+            ];
+        }
+
+        $activeUsers = $this->API->comm('/ppp/active/print', [
+            "?name" => $username
+        ]);
+
+        $this->API->disconnect();
+
+        if (empty($activeUsers)) {
+            return [
+                'username' => $username,
+                'bytes_in' => 0,
+                'bytes_out' => 0,
+            ];
+        }
+
+        $userData = $activeUsers[0];
+
+        return [
+            'username' => $username,
+            'bytes_in' => (int) ($userData['bytes-in'] ?? 0),
+            'bytes_out' => (int) ($userData['bytes-out'] ?? 0),
+        ];
     }
 }

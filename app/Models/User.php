@@ -12,6 +12,8 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected $table = 'tbl_user';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -21,7 +23,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'avatar',
+        'role',
+        'last_login_at',
+        'last_logout_at',
     ];
 
     /**
@@ -41,5 +45,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'last_logout_at' => 'datetime',
     ];
 }
